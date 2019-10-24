@@ -1,0 +1,36 @@
+= Ktor controllers
+
+Helpers to create powerful Ktor controllers
+
+== Example
+[source,kotlin]
+----
+install(Routing) {
+    route("/api") {
+        myController(SomeDependency())
+    }
+}
+
+fun Route.myController(
+        service: SomeDependency
+) {
+
+    class GetMyEntity : EmptyBodyInput() {
+        val id: Int by path()
+        val someParam: Boolean by query("realParamName", default = true)
+
+        override suspend fun PipelineContext<Unit, ApplicationCall>.respond() {
+            val entity = service.getEntity(id, someParam)
+
+            call.respond(entity)
+        }
+    }
+
+    route("/my-entities") {
+        GET("/{id}") { GetMyEntity() }
+                .responds<MyEntity>(OK)
+                .errors(NotFound)
+    }
+
+}
+----
