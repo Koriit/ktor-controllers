@@ -26,11 +26,29 @@ fun Route.myController(
         }
     }
 
+    class Upload : Input<ByteArray>(contentType = Application.OctetStream) {
+        val fileName: String by header("My-File-Name")
+
+        override suspend fun PipelineContext<Unit, ApplicationCall>.respond() {
+            File(fileName).writeBytes(body())
+
+            application.log.info("Finished upload of $fileName")
+
+            call.respondText("200 OK", contentType = Text.Plain)
+        }
+    }
+
+    // Routing
+
     route("/my-entities") {
         GET("/{id}") { GetMyEntity() }
                 .responds<MyEntity>(OK)
+                .errors(BadRequest)
                 .errors(NotFound)
     }
 
+    POST("/upload") { Upload() }
+            .responds<String>(OK, contentType = Text.Plain)
+            .errors(BadRequest)
 }
 ----
