@@ -78,13 +78,13 @@ test.finalizedBy(jacocoTestReport)
 /////////////
 
 task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
     archiveClassifier = 'sources'
-    from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar) {
+    from javadoc
     archiveClassifier = 'javadoc'
-    from javadoc.destinationDir
 }
 
 publishing {
