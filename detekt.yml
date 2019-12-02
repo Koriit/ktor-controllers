@@ -18,7 +18,7 @@ comments:
 complexity:
   ComplexMethod:
     ignoreSimpleWhenEntries: true
-    
+
 formatting:
   active: false
 

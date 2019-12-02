@@ -1,3 +1,6 @@
+// intended to differentiate from core functions
+@file:Suppress("FunctionName")
+
 package korrit.kotlin.ktor.controllers
 
 import io.ktor.routing.Route
@@ -11,81 +14,112 @@ import io.ktor.routing.put
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.ContextDsl
 
+/**
+ * Ktor attribute key of request handler object provider.
+ */
 val InputKey = AttributeKey<() -> Input<*>>("Input Provider")
 
-@Suppress("FunctionName")
+/**
+ * Builds a route to match `GET` requests with specified [path] that delegates responding to provided handler.
+ *
+ * @param path route's path to match
+ * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ */
 @ContextDsl
-inline fun <reified T : Input<*>> Route.GET(path: String, noinline provider: () -> T): Route {
-    val route = get(path) {
-        val request = provider()
-        request(this)
+inline fun <reified T : Input<*>> Route.GET(path: String, noinline handlerProvider: () -> T): Route {
+    return get(path) {
+        handlerProvider()(this)
+    }.apply {
+        attributes.put(InputKey, handlerProvider)
     }
-    route.attributes.put(InputKey, provider)
-    return route
 }
 
-@Suppress("FunctionName")
+/**
+ * Builds a route to match `POST` requests with specified [path] that delegates responding to provided handler.
+ *
+ * @param path route's path to match
+ * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ */
 @ContextDsl
-inline fun <reified T : Input<*>> Route.POST(path: String, noinline provider: () -> T): Route {
-    val route = post(path) {
-        val request = provider()
-        request(this)
+inline fun <reified T : Input<*>> Route.POST(path: String, noinline handlerProvider: () -> T): Route {
+    return post(path) {
+        handlerProvider()(this)
+    }.apply {
+        attributes.put(InputKey, handlerProvider)
     }
-    route.attributes.put(InputKey, provider)
-    return route
 }
 
-@Suppress("FunctionName")
+/**
+ * Builds a route to match `PUT` requests with specified [path] that delegates responding to provided handler.
+ *
+ * @param path route's path to match
+ * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ */
 @ContextDsl
-inline fun <reified T : Input<*>> Route.PUT(path: String, noinline provider: () -> T): Route {
-    val route = put(path) {
-        val request = provider()
-        request(this)
+inline fun <reified T : Input<*>> Route.PUT(path: String, noinline handlerProvider: () -> T): Route {
+    return put(path) {
+        handlerProvider()(this)
+    }.apply {
+        attributes.put(InputKey, handlerProvider)
     }
-    route.attributes.put(InputKey, provider)
-    return route
 }
 
-@Suppress("FunctionName")
+/**
+ * Builds a route to match `PATCH` requests with specified [path] that delegates responding to provided handler.
+ *
+ * @param path route's path to match
+ * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ */
 @ContextDsl
-inline fun <reified T : Input<*>> Route.PATCH(path: String, noinline provider: () -> T): Route {
-    val route = patch(path) {
-        val request = provider()
-        request(this)
+inline fun <reified T : Input<*>> Route.PATCH(path: String, noinline handlerProvider: () -> T): Route {
+    return patch(path) {
+        handlerProvider()(this)
+    }.apply {
+        attributes.put(InputKey, handlerProvider)
     }
-    route.attributes.put(InputKey, provider)
-    return route
 }
 
-@Suppress("FunctionName")
+/**
+ * Builds a route to match `HEAD` requests with specified [path] that delegates responding to provided handler.
+ *
+ * @param path route's path to match
+ * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ */
 @ContextDsl
-inline fun <reified T : Input<*>> Route.HEAD(path: String, noinline provider: () -> T): Route {
-    val route = head(path) {
-        val request = provider()
-        request(this)
+inline fun <reified T : Input<*>> Route.HEAD(path: String, noinline handlerProvider: () -> T): Route {
+    return head(path) {
+        handlerProvider()(this)
+    }.apply {
+        attributes.put(InputKey, handlerProvider)
     }
-    route.attributes.put(InputKey, provider)
-    return route
 }
 
-@Suppress("FunctionName")
+/**
+ * Builds a route to match `DELETE` requests with specified [path] that delegates responding to provided handler.
+ *
+ * @param path route's path to match
+ * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ */
 @ContextDsl
-inline fun <reified T : Input<*>> Route.DELETE(path: String, noinline provider: () -> T): Route {
-    val route = delete(path) {
-        val request = provider()
-        request(this)
+inline fun <reified T : Input<*>> Route.DELETE(path: String, noinline handlerProvider: () -> T): Route {
+    return delete(path) {
+        handlerProvider()(this)
+    }.apply {
+        attributes.put(InputKey, handlerProvider)
     }
-    route.attributes.put(InputKey, provider)
-    return route
 }
 
-@Suppress("FunctionName")
+/**
+ * Builds a route to match `OPTIONS` requests with specified [path] that delegates responding to provided handler.
+ *
+ * @param path route's path to match
+ * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ */
 @ContextDsl
-inline fun <reified T : Input<*>> Route.OPTIONS(path: String, noinline provider: () -> T): Route {
-    val route = options(path) {
-        val request = provider()
-        request(this)
+inline fun <reified T : Input<*>> Route.OPTIONS(path: String, noinline handlerProvider: () -> T): Route {
+    return options(path) {
+        handlerProvider()(this)
+    }.apply {
+        attributes.put(InputKey, handlerProvider)
     }
-    route.attributes.put(InputKey, provider)
-    return route
 }

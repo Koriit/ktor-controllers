@@ -1,6 +1,36 @@
-= Ktor controllers
+= Ktor Controllers
 
-Helpers to create powerful Ktor controllers
+image:https://www.travis-ci.org/Koriit/ktor-controllers.svg?branch=master["Build Status", link="https://www.travis-ci.org/Koriit/ktor-controllers"]
+image:https://www.codefactor.io/repository/github/koriit/ktor-controllers/badge[CodeFactor,link=https://www.codefactor.io/repository/github/koriit/ktor-controllers]
+image:https://img.shields.io/badge/code%20style-%E2%9D%A4-FF4081.svg[ktlint,link=https://ktlint.github.io/]
+
+image:https://api.bintray.com/packages/koriit/kotlin/ktor-controllers/images/download.svg[Download, link=https://bintray.com/koriit/kotlin/ktor-controllers/_latestVersion]
+image:https://img.shields.io/github/license/koriit/ktor-controllers[GitHub]
+
+Helpers to create powerful Ktor controllers.
+
+[WARNING]
+This library is *Work In Progress*. It may not support declaration of compatibility-relevant API elements yet.
+
+== Motivation
+
+1. *GOAL:* +
+Ease creation of feature-full HTTP API.
++
+*SOLUTION:* +
+Provide helpers to access request elements that are able to parse input into requested type and throw
+friendly exceptions that can be easily caught by exception handling mechanism.
+
+2. *GOAL:* +
+Allow automatic analysis of your API without analyzing code.
++
+*SOLUTION:* +
+Make everything declarative. Such declarations can by later accessed by analyzers to describe/understand the API.
+3. *GOAL:* +
+Reduce usage of annotations to *zero*.
++
+*SOLUTION:* +
+Use property delegation syntax present in Kotlin language.
 
 == Example
 [source,kotlin]
@@ -11,16 +41,19 @@ install(Routing) {
     }
 }
 
+// Encapsulating handler classes in controller function
+// allows simple installation of controller and passing of dependencies
 fun Route.myController(
         service: SomeDependency
 ) {
 
     class GetMyEntity : EmptyBodyInput() {
         val id: Int by path()
-        val someParam: Boolean by query("realParamName", default = true)
+        val requiredParam: Boolean by query()
+        val otherParam: Boolean by query("realParamName", default = true)
 
         override suspend fun PipelineContext<Unit, ApplicationCall>.respond() {
-            val entity = service.getEntity(id, someParam)
+            val entity = service.getEntity(id, requiredParam, otherParam)
 
             call.respond(entity)
         }
