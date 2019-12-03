@@ -18,7 +18,6 @@ plugins {
 
 repositories {
     jcenter()
-
 }
 
 ext {

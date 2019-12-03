@@ -85,3 +85,28 @@ fun Route.myController(
             .errors(BadRequest)
 }
 ----
+
+== Features
+Set of additional features included in this library.
+
+=== UUIDCallId
+This is https://ktor.io/servers/features/call-id.html[CallId] feature with predefined configuration.
+
+This:
+[source,kotlin]
+----
+install(UUIDCallId)
+----
+
+Is equivalent to:
+[source,kotlin]
+----
+install(CallId) {
+    header(HttpHeaders.XRequestId)
+    generate { UUID.randomUUID().toString() }
+    verify { it.isNotBlank() }
+}
+----
+
+[NOTE]
+`UUIDCallId.key === CallId.key`
