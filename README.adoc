@@ -33,6 +33,7 @@ Reduce usage of annotations to *zero*.
 Use property delegation syntax present in Kotlin language.
 
 == Example
+.Function wrapper
 [source,kotlin]
 ----
 install(Routing) {
@@ -52,7 +53,7 @@ fun Route.myController(
         val requiredParam: Boolean by query()
         val otherParam: Boolean by query("realParamName", default = true)
 
-        override suspend fun PipelineContext<Unit, ApplicationCall>.respond() {
+        override suspend fun Ctx.respond() {
             val entity = service.getEntity(id, requiredParam, otherParam)
 
             call.respond(entity)
@@ -62,7 +63,7 @@ fun Route.myController(
     class Upload : Input<ByteArray>(contentType = Application.OctetStream) {
         val fileName: String by header("My-File-Name")
 
-        override suspend fun PipelineContext<Unit, ApplicationCall>.respond() {
+        override suspend fun Ctx.respond() {
             File(fileName).writeBytes(body())
 
             application.log.info("Finished upload of $fileName")
@@ -83,6 +84,60 @@ fun Route.myController(
     POST("/upload") { Upload() }
             .responds<String>(OK, contentType = Text.Plain)
             .errors(BadRequest)
+}
+----
+
+.Class wrapper
+[source,kotlin]
+----
+install(Routing) {
+    route("/api") {
+        MyController(SomeDependency()).run { register() }
+    }
+}
+
+// Encapsulating handler classes in controller class
+// allows simple installation of controller and passing of dependencies
+class MyController(
+        private val service: SomeDependency
+) {
+
+    fun Route.register() {
+        route("/my-entities") {
+            GET("/{id}") { GetMyEntity() }
+                    .responds<MyEntity>(OK)
+                    .errors(BadRequest)
+                    .errors(NotFound)
+        }
+
+        POST("/upload") { Upload() }
+                .responds<String>(OK, contentType = Text.Plain)
+                .errors(BadRequest)
+    }
+
+    inner class GetMyEntity : EmptyBodyInput() {
+        val id: Int by path()
+        val requiredParam: Boolean by query()
+        val otherParam: Boolean by query("realParamName", default = true)
+
+        override suspend fun Ctx.respond() {
+            val entity = service.getEntity(id, requiredParam, otherParam)
+
+            call.respond(entity)
+        }
+    }
+
+    inner class Upload : Input<ByteArray>(contentType = Application.OctetStream) {
+        val fileName: String by header("My-File-Name")
+
+        override suspend fun Ctx.respond() {
+            File(fileName).writeBytes(body())
+
+            application.log.info("Finished upload of $fileName")
+
+            call.respondText("200 OK", contentType = Text.Plain)
+        }
+    }
 }
 ----
 

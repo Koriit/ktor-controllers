@@ -8,6 +8,9 @@ import io.ktor.request.contentType
 import io.ktor.request.receive
 import io.ktor.util.pipeline.PipelineContext
 
+/** Shorthand alias of [PipelineContext]. */
+typealias Ctx = PipelineContext<Unit, ApplicationCall>
+
 /**
  * Base class for request handlers. Many controller helpers depend on it.
  *
@@ -58,7 +61,7 @@ abstract class Input<BodyType : Any>(
     /**
      * Request handler.
      */
-    abstract suspend fun PipelineContext<Unit, ApplicationCall>.respond()
+    abstract suspend fun Ctx.respond()
 
     /**
      * Contained way of setting `call` and calling `respond`.
