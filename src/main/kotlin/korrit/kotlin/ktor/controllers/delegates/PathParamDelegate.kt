@@ -59,7 +59,7 @@ class PathParamDelegate<T : Any?>(
         @Suppress("TooGenericExceptionCaught", "UNCHECKED_CAST") // intended
         try {
             receiver.call.application.conversionService.fromValues(values, type) as T
-        } catch (e: RuntimeException) {
+        } catch (e: Exception) {
             throw InputException("Cannot parse $name path parameter: ${e.message}", e)
         }
     }
