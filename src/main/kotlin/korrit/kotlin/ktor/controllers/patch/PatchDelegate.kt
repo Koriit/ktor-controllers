@@ -14,18 +14,35 @@ import kotlin.reflect.KProperty1
  * Do not confuse the both.
  */
 sealed class AbstractPatchDelegate<T : Any?, P : Any?> {
-    /** Name of *patch* property. */
+    /**
+     * Name of *patch* property.
+     */
     abstract val name: String
-    /** Whether *patch* property is required. */
+
+    /**
+     * Whether *patch* property is required.
+     */
     abstract val isRequired: Boolean
-    /** Whether *patch* value has been provided. */
+
+    /**
+     * Whether *patch* value has been provided.
+     */
     abstract val isSet: Boolean
-    /** Whether *patched* property is nullable. */
+
+    /**
+     * Whether *patched* property is nullable.
+     */
     abstract val isNullable: Boolean
 
-    /** Reference to *patched* property definition. */
+    /**
+     * Reference to *patched* property definition.
+     */
     internal abstract val prop: KProperty1<T, P>
-    /** Shorthand reference to mutable *patched* property definition. Throws if property is read-only. */
+
+    /**
+     * Shorthand reference to mutable *patched* property definition.
+     * Throws if property is read-only.
+     */
     internal val mutableProp: KMutableProperty1<T, P> get() = prop as KMutableProperty1<T, P>
 }
 
@@ -39,7 +56,9 @@ class PatchDelegate<T : Any?, P : Any?>(
     override val prop: KProperty1<T, P>
 ) : ReadWriteProperty<Any?, P>, AbstractPatchDelegate<T, P>() {
 
-    /** The actual value that is held by this delegate. */
+    /**
+     * The actual value that is held by this delegate.
+     */
     internal var value: P? = null
         private set
 
@@ -72,7 +91,9 @@ class NestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>>(
     override val prop: KProperty1<T, P>
 ) : ReadWriteProperty<Any?, N>, AbstractPatchDelegate<T, P>() {
 
-    /** Nested patch. */
+    /**
+     * Nested patch.
+     */
     internal var patch: N? = null
         private set
 

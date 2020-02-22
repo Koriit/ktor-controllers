@@ -3,11 +3,30 @@ package korrit.kotlin.ktor.controllers.patch
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.ktor.client.utils.EmptyContent
+import io.ktor.http.ContentType.Application
+import io.ktor.http.HttpHeaders.ContentType
+import io.ktor.http.HttpMethod.Companion.Patch
+import io.ktor.http.HttpMethod.Companion.Put
+import io.ktor.http.HttpStatusCode.Companion.NoContent
+import io.ktor.http.HttpStatusCode.Companion.OK
+import io.ktor.http.content.OutgoingContent
+import io.ktor.http.content.OutgoingContent.NoContent
+import io.ktor.request.httpMethod
+import io.ktor.response.respond
+import io.ktor.server.testing.setBody
 import koriit.kotlin.slf4j.logger
+import korrit.kotlin.ktor.controllers.Ctx
+import korrit.kotlin.ktor.controllers.Input
+import korrit.kotlin.ktor.controllers.PATCH
+import korrit.kotlin.ktor.controllers.PUT
 import korrit.kotlin.ktor.controllers.exceptions.InputException
+import korrit.kotlin.ktor.controllers.responds
 import korrit.kotlin.ktor.controllers.testCases
+import korrit.kotlin.ktor.controllers.testServer
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -39,9 +58,17 @@ internal class PatchOfTest {
         var nested by patchOf(Entity::nestedField, by = NestedPatch::class)
     }
 
-    class RequiredPatch : PatchOf<Entity>() {
-        var required by patchOf(Entity::intField, required = true)
-        var optional by patchOf(Entity::stringField)
+    class CustomPatch : PatchOf<Entity>() {
+        var intField by patchOf(Entity::intField)
+        var specialField : Boolean = false
+
+        override fun patch(obj: Entity) {
+            super.patch(obj)
+
+            if(specialField) {
+                obj.nullableField = null
+            }
+        }
     }
 
     private val log = logger {}
@@ -478,6 +505,66 @@ internal class PatchOfTest {
         assertThrows<InputException> { requiredPatch.patched(MyEntity()) }
         assertThrows<InputException> { requiredPatch.update(MyEntity()) }
         assertThrows<InputException> { requiredPatch.updated(MyEntity()) }
+    }
+
+    @Test
+    fun `Should work with custom logic`() {
+        val json = "{\n  \"intField\": 1,\n  \"specialField\": true\n}"
+        val patch : CustomPatch = jackson.readValue(json)
+        val obj = newEntity()
+
+        patch.patch(obj)
+
+        assertEquals(newEntity().copy(intField = 1, nullableField = null), obj)
+    }
+
+    @Test
+    fun `Should work in full server configuration`() {
+        val server = testServer {
+            class UpdateRequest : Input<EntityPatch>() {
+                override suspend fun Ctx.respond() {
+                    val patch: EntityPatch = body()
+                    when (call.request.httpMethod) {
+                        Put -> {
+                            patch.update(newEntity())
+                            patch.updated(newEntity())
+                        }
+                        Patch -> {
+                            patch.patch(newEntity())
+                            patch.patched(newEntity())
+                        }
+                    }
+                    call.respond(NoContent, EmptyContent)
+                }
+            }
+
+            PUT("/put") { UpdateRequest() }
+            PATCH("/patch") { UpdateRequest() }
+        }
+
+        server.start()
+
+        with(server.handleRequest {
+            uri = "/put"
+            method = Put
+            addHeader(ContentType, Application.Json.toString())
+            setBody("{\n  \"int\": 0,\n  \"string\": \"\",\n  \"float\": 0.0,\n  \"nullable\": null,\n  \"nested\": {\n    \"bf\": true\n  }\n}")
+        }) {
+            assertEquals(NoContent, response.status())
+            assertNull(response.content)
+        }
+
+        with(server.handleRequest {
+            uri = "/patch"
+            method = Patch
+            addHeader(ContentType, Application.Json.toString())
+            setBody("{\n  \"int\": 0,\n  \"string\": \"\",\n  \"float\": 0.0,\n  \"nullable\": null,\n  \"nested\": {\n    \"bf\": true\n  }\n}")
+        }) {
+            assertEquals(NoContent, response.status())
+            assertNull(response.content)
+        }
+
+        server.stop(0, 0)
     }
 
     private fun newEntity() = Entity(

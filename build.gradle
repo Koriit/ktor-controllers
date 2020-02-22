@@ -26,6 +26,10 @@ ext {
 }
 
 dependencies {
+    configurations.all {
+        exclude group: "junit" // unneeded transitive dependency
+    }
+
     // KOTLIN
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
@@ -34,9 +38,14 @@ dependencies {
     implementation "io.ktor:ktor-server-host-common:$ktorVersion"
 
     // TESTING
-    testImplementation "org.junit.jupiter:junit-jupiter:5.6.0"
-    testImplementation "koriit.kotlin:slf4j-utils-logback:0.2.3"
+    testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.10.2"
     testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2"
+    testImplementation "io.ktor:ktor-jackson:$ktorVersion"
+    testImplementation "io.ktor:ktor-server-cio:$ktorVersion"
+    testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
+    testImplementation "koriit.kotlin:ktor-time:0.2.1"
+    testImplementation "koriit.kotlin:slf4j-utils-logback:0.2.3"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.6.0"
 }
 
 /////////////

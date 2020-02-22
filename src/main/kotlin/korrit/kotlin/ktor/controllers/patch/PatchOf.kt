@@ -392,7 +392,7 @@ open class PatchOf<T : Any?> {
         /** Provides a delegate for given object. */
         operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): PatchDelegate<T, P> {
             if (property !is KMutableProperty1<*, *>) throw UnsupportedOperationException("Delegated property must be mutable: ${property.name}")
-            if (::patchedClass.isInitialized && patchedClass != clazz) throw IllegalArgumentException("All delegates must belong to the same class: ${clazz.simpleName}")
+            if (::patchedClass.isInitialized && patchedClass != clazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
 
             if (prop !is KMutableProperty1<*, *>) allowsInPlace = false
             @Suppress("UNCHECKED_CAST") // Safe if not called from outside of this class
@@ -419,7 +419,7 @@ open class PatchOf<T : Any?> {
         /** Provides a delegate for given object. */
         operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): NestedPatchDelegate<T, P, U> {
             if (property !is KMutableProperty1<*, *>) throw UnsupportedOperationException("Delegated property must be mutable: ${property.name}")
-            if (::patchedClass.isInitialized && patchedClass != clazz) throw IllegalArgumentException("All delegates must belong to the same class: ${clazz.simpleName}")
+            if (::patchedClass.isInitialized && patchedClass != clazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
 
             if (prop !is KMutableProperty1<*, *>) allowsInPlace = false
             @Suppress("UNCHECKED_CAST") // Safe if not called from outside of this class

@@ -25,6 +25,7 @@ typealias Ctx = PipelineContext<Unit, ApplicationCall>
  * @param bodyRequired whether request body is required
  */
 // we are prefixing variables with _ because we don't want to limit possible property names of Input derivatives
+// and we still want them to be accessible by analyzers
 @Suppress("LocalVariableName", "PropertyName", "VariableNaming")
 abstract class Input<BodyType : Any>(
     contentType: ContentType? = null,
@@ -77,7 +78,7 @@ abstract class Input<BodyType : Any>(
      * @throws UnsupportedMediaTypeException if `strict` is `true` and request's content type doesn't match `contentType`
      */
     suspend inline fun <reified R : BodyType> PipelineContext<Unit, ApplicationCall>.body(): R {
-        if (_contentType != null && _strict && !_contentType.match(call.request.contentType())) {
+        if (_contentType != null && _strict && !call.request.contentType().match(_contentType)) {
             throw UnsupportedMediaTypeException(call.request.contentType())
         }
 

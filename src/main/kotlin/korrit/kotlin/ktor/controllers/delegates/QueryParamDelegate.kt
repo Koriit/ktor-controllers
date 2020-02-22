@@ -28,7 +28,7 @@ class QueryParamDelegate<T : Any?>(
     // lateinit and Delegates.notNull() do not support nullable types, hence provider design used here
     val default by lazy { defaultValueProvider() }
 
-    private var defaultValueProvider: () -> T = { throw InputException("Missing $name header") }
+    private var defaultValueProvider: () -> T = { throw InputException("Missing $name query param") }
 
     /**
      * Whether parameter is required. This is inferred with presence of default value.
