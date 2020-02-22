@@ -1,4 +1,5 @@
 = Ktor Controllers
+:toc:
 
 image:https://www.travis-ci.org/Koriit/ktor-controllers.svg?branch=master["Build Status", link="https://www.travis-ci.org/Koriit/ktor-controllers"]
 image:https://www.codefactor.io/repository/github/koriit/ktor-controllers/badge[CodeFactor,link=https://www.codefactor.io/repository/github/koriit/ktor-controllers]
@@ -10,7 +11,8 @@ image:https://img.shields.io/github/license/koriit/ktor-controllers[GitHub]
 Helpers to create powerful Ktor controllers.
 
 [WARNING]
-This library is *Work In Progress*. It may not support declaration of compatibility-relevant API elements yet.
+This library can still be considered a *Work In Progress*.
+It may not support some of compatibility-relevant API elements in declarative way yet.
 
 == Motivation
 
@@ -25,7 +27,9 @@ friendly exceptions that can be easily caught by exception handling mechanism.
 Allow automatic analysis of your API without analyzing code.
 +
 *SOLUTION:* +
-Make everything declarative. Such declarations can by later accessed by analyzers to describe/understand the API.
+Make everything declarative. Such declarations can be later accessed by analyzers to
+describe/understand the API, i.e. for OpenAPI.
+
 3. *GOAL:* +
 Reduce usage of annotations to *zero*.
 +
@@ -33,6 +37,10 @@ Reduce usage of annotations to *zero*.
 Use property delegation syntax present in Kotlin language.
 
 == Example
+[NOTE]
+Check the implementation to see what is possible and what is not. Know the tool you use.
+It is not a Spring Framework, so no excuses. :)
+
 .Function wrapper
 [source,kotlin]
 ----
@@ -141,6 +149,155 @@ class MyController(
 }
 ----
 
+== PATCH and PUT
+Since "the dawn of time" there has been the problem of applying _PATCH_ and _PUT_ modifications on the
+resource at hand. Whereas the _PUT_ method has a well understood semantic of "entirely replacing" the
+target resource, the _PATCH_ method is defined just as a partial modification. There is a number of
+proposals and approaches to describing this partial modification, without a single accepted standard.
+
+=== RFC 7396
+Ktor Controllers follow semantics defined by link:https://tools.ietf.org/html/rfc7396[RFC 7396 -
+JSON Merge Patch]. However, this has to be taken with a grain of salt as type system imposes
+some constraints which are not considered by this rfc because it is defined on generic JSON.
+
+=== Problem of PATCH
+Implementing a _PATCH_ poses additional problem, unlike a _PUT_, missing values cannot be
+treated as `null` - we want to clear a value only if explicitly stated in _PATCH_ request.
+This is problematic as type system actually uses `null` to indicate a missing value.
+We would need a `null` of `null` kind of concept, which unfortunately is not there.
+Thus, for every updated property we need to somehow check if it is present in the request.
+
+All this with _PUT_ requests still using `null` for missing values.
+
+Ktor Controllers use delegates for patch properties and delegates can hold the information whether a property
+was passed or not. We can skip missing property, throw or just use `null` if acceptable.
+
+=== Usage
+You can describe(remember that we want to be declarative) your `PATCH` and `PUT` with generic
+`PatchOf` base class. It provides you with `patchOf` generic delegate builder and functions
+to modify your target resource object:
+
+. `patch` - modifies object in-place with _PATCH_ semantics
+. `patched` - returns a copy of object modified with _PATCH_ semantics
+. `update` - modifies object in-place with _PUT_ semantics
+. `updated` - returns a copy of object modified with _PUT_ semantics
+
+[NOTE]
+`patch` and `update` require all delegates to target mutable properties - defined with `var`.
+
+.Example
+[source,kotlin]
+----
+data class User(
+    val id: Long,
+    val login: String,
+    val name: String,
+    val age: Int
+)
+
+class UserPatch : PatchOf<User>() {
+    val name by patchOf(User::name)
+    val age by patchOf(User::age)
+}
+
+class UpdateUser : Input<UserPatch>() {
+    val id: Long by path()
+
+    override suspend fun Ctx.respond() {
+        val patch: UserPatch = body()
+        val user = service.getUser(id)
+        service.save(patch.patched(user))
+
+        call.respond(NoContent, EmptyContent)
+    }
+}
+
+PATCH("/users/{id}") { UpdateUser() }
+    .responds<EmptyContent>(NoContent)
+    .errors(BadRequest)
+----
+
+[WARNING]
+Missing values are implicitly considered a bad input and cause a subtype of `BadRequestException`
+to be thrown.
+
+=== Custom logic
+If you have some custom logic to apply during patch/update or special fields in `PATCH`/`PUT`
+request, you can add them with normal code as `PatchOf` is open to override:
+
+[source,kotlin]
+----
+class CustomerPatch : PatchOf<Customer>() {
+    var name by patchOf(Customer::name)
+    var age by patchOf(Customer::age)
+
+    var clearAddress : Boolean = false // special field
+
+    override fun patch(obj: Customer) {
+        super.patch(obj)
+
+        if(clearAddress) {
+            obj.addressLine1 = null
+            obj.addressLine2 = null
+            obj.addressLine3 = null
+        }
+    }
+
+    // The same for `patched`, `update` and `updated`...
+}
+----
+
+=== Limitations
+There are a lot of possibilities of how you can place properties in your class(to be patched).
+Inside or outside of primary constructor, `var` or `val`, as a member or extension, etc.
+
+Unfortunately, being able to "automatically" apply modifications to your target object comes
+with some limitations:
+
+. You cannot define delegated properties in primary constructor - this is actually a Kotlin's limitation
+. Since delegates need to be updated after object initialization, they must be defined as mutable - `var`
+. `update` and `patch` modify patched object and require all delegates to be mapped to
+  mutable properties - `var`
+. `updated` and `patched` return copy and thus need some "copy constructor" - they use `copy` function
+  of data classes as it is the only well defined and standard way of copying objects - in result
+  `updated` and `patched` *only work for data classes*
+.. Additionally you cannot have delegates targeting properties outside of primary constructor because
+   they would not be included in the `copy` function (it may be possible to improve the implementation
+   to work around this limitation)
+. In case of nested structures, limitations of your deserializer apply
+. In case of nested patches, if patched object has `null` in target field then new instance needs to be
+  created:
+.. Instantiated type needs a primary constructor
+.. Patch class of instantiated type cannot have delegates outside of primary constructor
+   (it may be possible to improve the implementation to work around this limitation)
+.. Patch class of instantiated type must have delegates for all non-optional parameters
+   of primary constructor
+
+Fortunately, all of these can be verified and an exception is thrown if an illegal structure
+is detected(see tests). Unfortunately, most of them only at runtime. Therefore, make sure to
+write tests for your patch classes.
+
+In general, `PatchOf` should cover most of the reasonable use cases. If you are the unfortunate one,
+share your use case and we will see what can be done.
+
+== Generics, compiler and limitations
+When I started writing Ktor Controllers I wasn't sure if I will be able to achieve the goal I set
+for myself - it was an experiment on Kotlin generics, delegates and empowering the compiler.
+There was a lot of going back and forth, rewriting, thinking... At some point, I almost gave in
+thinking that this is not going to work(especially `PatchOf`).
+
+I *did not* achieve the elegance I set out for. At the time of writing, there were some limitations
+of generics and Kotlin compiler that could not be worked around - or had to be worked around which
+contributed unwanted complexity. As an example: given generic type `T: Any` you can make it nullable
+with `T?`, however, the other way around is not possible - you cannot make `T: Any?` non-nullable
+with something like `T!!`, even if you are fine with NPE. There is so much more information that
+compiler could possibly infer from the code and warn you about.
+
+However, considering current capabilities of Kotlin language and compiler, *I am satisfied*.
+I am certainly going with it to production. I love the readability and control I have over
+what is going on. There are no annotations, what I read is what is executed.
+This is general design decision behind Ktor, I believe.
+
 == Features
 Set of additional features included in this library.
 
@@ -157,11 +314,12 @@ Is equivalent to:
 [source,kotlin]
 ----
 install(CallId) {
-    header(HttpHeaders.XRequestId)
+    header(HttpHeaders.XCorrelationId)
     generate { UUID.randomUUID().toString() }
     verify { it.isNotBlank() }
 }
 ----
+The actual header used can be configured.
 
 [NOTE]
 `UUIDCallId.key === CallId.key`
