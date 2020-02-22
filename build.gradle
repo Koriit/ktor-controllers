@@ -8,8 +8,8 @@ plugins {
     id "java-library"
     id "maven-publish"
     id "jacoco"
-    id "org.jlleitschuh.gradle.ktlint" version "9.1.1"
-    id "io.gitlab.arturbosch.detekt" version "1.2.2"
+    id "org.jlleitschuh.gradle.ktlint" version "9.2.1"
+    id "io.gitlab.arturbosch.detekt" version "1.5.1"
     id "com.github.ben-manes.versions" version "0.27.0"
 }
 
@@ -34,7 +34,9 @@ dependencies {
     implementation "io.ktor:ktor-server-host-common:$ktorVersion"
 
     // TESTING
-    testImplementation "org.junit.jupiter:junit-jupiter:5.5.0"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.6.0"
+    testImplementation "koriit.kotlin:slf4j-utils-logback:0.2.3"
+    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2"
 }
 
 /////////////
@@ -54,7 +56,8 @@ compileKotlin {
 
 compileTestKotlin {
     kotlinOptions {
-        freeCompilerArgs = ["-Xjsr305=strict"]
+        freeCompilerArgs = ["-Xjsr305=strict",
+                            "-Xuse-experimental=io.ktor.util.KtorExperimentalAPI"]
         jvmTarget = "1.8"
     }
 }
@@ -64,6 +67,7 @@ compileTestKotlin {
 //////////
 
 ktlint {
+    version = "0.36.0"
     verbose = true
 }
 
@@ -132,7 +136,7 @@ bintray {
         name = "ktor-controllers"
         version {
             name = project.version
-            released  = new Date()
+            released = new Date()
         }
     }
 }

@@ -3,9 +3,9 @@ build:
 
 comments:
   CommentOverPrivateFunction:
-    active: true
+    active: false
   CommentOverPrivateProperty:
-    active: true
+    active: false
   EndOfSentenceFormat:
     active: true
   UndocumentedPublicClass:
@@ -18,6 +18,10 @@ comments:
 complexity:
   ComplexMethod:
     ignoreSimpleWhenEntries: true
+
+naming:
+  MemberNameEqualsClassName:
+    active: false
 
 formatting:
   active: false
