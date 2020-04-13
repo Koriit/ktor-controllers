@@ -9,8 +9,6 @@ import io.ktor.http.HttpHeaders.ContentType
 import io.ktor.http.HttpMethod.Companion.Patch
 import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.http.HttpStatusCode.Companion.NoContent
-import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.OutgoingContent.NoContent
 import io.ktor.request.httpMethod
 import io.ktor.response.respond
@@ -21,7 +19,6 @@ import korrit.kotlin.ktor.controllers.Input
 import korrit.kotlin.ktor.controllers.PATCH
 import korrit.kotlin.ktor.controllers.PUT
 import korrit.kotlin.ktor.controllers.exceptions.InputException
-import korrit.kotlin.ktor.controllers.responds
 import korrit.kotlin.ktor.controllers.testCases
 import korrit.kotlin.ktor.controllers.testServer
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
@@ -60,12 +57,12 @@ internal class PatchOfTest {
 
     class CustomPatch : PatchOf<Entity>() {
         var intField by patchOf(Entity::intField)
-        var specialField : Boolean = false
+        var specialField: Boolean = false
 
         override fun patch(obj: Entity) {
             super.patch(obj)
 
-            if(specialField) {
+            if (specialField) {
                 obj.nullableField = null
             }
         }
@@ -510,7 +507,7 @@ internal class PatchOfTest {
     @Test
     fun `Should work with custom logic`() {
         val json = "{\n  \"intField\": 1,\n  \"specialField\": true\n}"
-        val patch : CustomPatch = jackson.readValue(json)
+        val patch: CustomPatch = jackson.readValue(json)
         val obj = newEntity()
 
         patch.patch(obj)
