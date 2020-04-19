@@ -23,9 +23,10 @@ typealias Ctx = PipelineContext<Unit, ApplicationCall>
  * @param strict whether to apply strict validations
  * @param deprecated whether this API is deprecated
  * @param bodyRequired whether request body is required
+ * @param BodyType Type of request body to use in deserialization
  */
 // we are prefixing variables with _ because we don't want to limit possible property names of Input derivatives
-// and we still want them to be accessible by analyzers
+// and we still want them to be public to be accessible by analyzers
 @Suppress("LocalVariableName", "PropertyName", "VariableNaming")
 abstract class Input<BodyType : Any>(
     contentType: ContentType? = null,
@@ -44,7 +45,7 @@ abstract class Input<BodyType : Any>(
     val _bodyRequired = bodyRequired
 
     /**
-     * Content type of the request. Null implies default which should be handler by the user.
+     * Content type of the request. Null implies default which should be handled by the user.
      */
     val _contentType = contentType
 
@@ -75,6 +76,7 @@ abstract class Input<BodyType : Any>(
     /**
      * Typed way to receive request body.
      *
+     * @param R Type of request body to use in deserialization. Hacky [BodyType] redeclaration to get it reified
      * @throws UnsupportedMediaTypeException if `strict` is `true` and request's content type doesn't match `contentType`
      */
     suspend inline fun <reified R : BodyType> PipelineContext<Unit, ApplicationCall>.body(): R {

@@ -25,6 +25,8 @@ import kotlin.reflect.full.primaryConstructor
  * RFC7396 is also kind of broken by required constraint that can be forced on patch property.
  *
  * There are no public fields as they would limit possible patch property names.
+ *
+ * @param T Target patched class
  */
 @KtorExperimentalAPI
 open class PatchOf<T : Any?> {
@@ -47,7 +49,7 @@ open class PatchOf<T : Any?> {
     /**
      * Whether in-place modifications are possible for this patch object.
      */
-    private var allowsInPlace = true
+    private var canModifyInPlace = true
 
     /**
      * List of delegates defined in this patch object.
@@ -55,26 +57,66 @@ open class PatchOf<T : Any?> {
     private val delegates = mutableListOf<AbstractPatchDelegate<T, Any?>>()
 
     /**
+     * Helper function to create required patch delegates.
+     *
+     * Patch value overrides entirely the patched property.
+     *
+     * @param prop Definition of patched property, i.e. PatchedClass::patchedProperty
+     * @param required Must be true. Additional param allows us to have an overload that declares different return type
+     * @param D Target patched class. Hacky [T] redeclaration to get it reified
+     * @param P Type of patched property
+     */
+    inline fun <reified D : T, P : Any?> patchOf(prop: KProperty1<D, P>, required: Boolean): RequiredPatchDelegateProvider<P> {
+        assert(required) { "Parameter 'required' of 'patchOf' delegate builder must be true or omitted" }
+        return RequiredPatchDelegateProvider(prop, D::class)
+    }
+
+    /**
      * Helper function to create patch delegates.
      *
      * Patch value overrides entirely the patched property.
      *
-     * @param prop Definition of patched property, i.e. TargetClass::myProperty
-     * @param required Whether patch value must be provided
+     * @param prop Definition of patched property, i.e. PatchedClass::patchedProperty
+     * @param D Target patched class. Hacky [T] redeclaration to get it reified
+     * @param P Type of patched property
      */
-    inline fun <reified D : T, P : Any?> patchOf(prop: KProperty1<D, P>, required: Boolean = false) = PatchDelegateProvider(prop, required, D::class)
+    inline fun <reified D : T, P : Any?> patchOf(prop: KProperty1<D, P>): PatchDelegateProvider<P> {
+        return PatchDelegateProvider(prop, D::class)
+    }
+
+    /**
+     * Helper function to create required nested patch delegates.
+     *
+     * Patch value updates patched property with the same logic as is applied to the patched object.
+     *
+     * @param prop Definition of patched property, i.e. PatchedClass::nestedObject (which is of type NestedClass)
+     * @param by The patch class to be used for this property, i.e. NestedClassPatch::class (which is PatchOf<NestedClass>)
+     * @param required Must be true. Additional param allows us to have an overload that declares different return type
+     * @param D Target patched class. Hacky [T] redeclaration to get it reified
+     * @param P Type of patched property
+     * @param U Type of Patch Class that is going to patch property
+     */
+    @Suppress("UNUSED_PARAMETER") // param `by` allows the compiler to infer generic type U
+    inline fun <reified D : T, P : Any?, U : PatchOf<P>> patchOf(prop: KProperty1<D, P>, by: KClass<U>, required: Boolean): RequiredNestedPatchDelegateProvider<P, U> {
+        assert(required) { "Parameter 'required' of 'patchOf' delegate builder must be true or omitted" }
+        return RequiredNestedPatchDelegateProvider(prop, D::class)
+    }
 
     /**
      * Helper function to create nested patch delegates.
      *
      * Patch value updates patched property with the same logic as is applied to the patched object.
      *
-     * @param prop Definition of patched property, i.e. TargetClass::nestedObject (which is of type NestedClass)
+     * @param prop Definition of patched property, i.e. PatchedClass::nestedObject (which is of type NestedClass)
      * @param by The patch class to be used for this property, i.e. NestedClassPatch::class (which is PatchOf<NestedClass>)
-     * @param required Whether patch value must be provided
+     * @param D Target patched class. Hacky [T] redeclaration to get it reified
+     * @param P Type of patched property
+     * @param U Type of Patch Class that is going to patch property
      */
     @Suppress("UNUSED_PARAMETER") // param `by` allows the compiler to infer generic type U
-    inline fun <reified D : T, P : Any?, U : PatchOf<P>> patchOf(prop: KProperty1<D, P>, by: KClass<U>, required: Boolean = false) = NestedPatchDelegateProvider<P, U>(prop, required, D::class)
+    inline fun <reified D : T, P : Any?, U : PatchOf<P>> patchOf(prop: KProperty1<D, P>, by: KClass<U>): NestedPatchDelegateProvider<P, U> {
+        return NestedPatchDelegateProvider(prop, D::class)
+    }
 
     /**
      * Creates new instance of patched class.
@@ -95,7 +137,7 @@ open class PatchOf<T : Any?> {
         val params: MutableMap<KParameter, Any?> = mutableMapOf()
 
         for (patch in delegates) {
-            val param = ctorParams.getValue(patch.prop)
+            val param = ctorParams.getValue(patch.patchedProp)
             if (!patch.isSet) {
                 if (patch.isRequired) throw InputException("Missing field: ${patch.name}")
                 // missing but optional so we can skip it
@@ -130,7 +172,7 @@ open class PatchOf<T : Any?> {
     open fun patch(obj: T) {
         if (!::patchedClass.isInitialized) throw UnsupportedOperationException("${javaClass.simpleName} does not define any patch delegate")
         if (obj == null) throw IllegalArgumentException("Patched object cannot be null")
-        if (!allowsInPlace) throw UnsupportedOperationException("This operation is only supported for patches of mutable properties")
+        if (!canModifyInPlace) throw UnsupportedOperationException("This operation is only supported for patches of mutable properties")
 
         for (patch in delegates) {
             if (!patch.isSet) {
@@ -147,7 +189,7 @@ open class PatchOf<T : Any?> {
                     patch as NestedPatchDelegate<T, Any?, PatchOf<Any?>>
 
                     val nestedPatch = patch.patch!!
-                    val nestedValue = patch.prop.get(obj)
+                    val nestedValue = patch.patchedProp.get(obj)
 
                     if (nestedValue != null) {
                         nestedPatch.patch(nestedValue)
@@ -193,7 +235,7 @@ open class PatchOf<T : Any?> {
                 if (patch.isRequired) throw InputException("Missing field: ${patch.name}")
                 continue
             }
-            val param = copyParams.getValue(patch.prop)
+            val param = copyParams.getValue(patch.patchedProp)
 
             val value = when (patch) {
                 is PatchDelegate<T, Any?> -> {
@@ -204,7 +246,7 @@ open class PatchOf<T : Any?> {
                     patch as NestedPatchDelegate<T, Any?, PatchOf<Any?>>
 
                     val nestedPatch = patch.patch!!
-                    val nestedValue = patch.prop.get(obj)
+                    val nestedValue = patch.patchedProp.get(obj)
 
                     if (nestedValue != null) {
                         nestedPatch.patched(nestedValue)
@@ -237,7 +279,7 @@ open class PatchOf<T : Any?> {
     open fun update(obj: T) {
         if (!::patchedClass.isInitialized) throw UnsupportedOperationException("${javaClass.simpleName} does not define any patch delegate")
         if (obj == null) throw IllegalArgumentException("Updated object cannot be null")
-        if (!allowsInPlace) throw UnsupportedOperationException("This operation is only supported for updates of mutable properties")
+        if (!canModifyInPlace) throw UnsupportedOperationException("This operation is only supported for updates of mutable properties")
 
         for (update in delegates) {
             if (!update.isSet) {
@@ -256,7 +298,7 @@ open class PatchOf<T : Any?> {
                     update as NestedPatchDelegate<T, Any?, PatchOf<Any?>>
 
                     val nestedUpdate = update.patch!!
-                    val nestedValue = update.prop.get(obj)
+                    val nestedValue = update.patchedProp.get(obj)
 
                     if (nestedValue != null) {
                         nestedUpdate.update(nestedValue)
@@ -298,7 +340,7 @@ open class PatchOf<T : Any?> {
         )
 
         for (update in delegates) {
-            val param = copyParams.getValue(update.prop)
+            val param = copyParams.getValue(update.patchedProp)
 
             if (!update.isSet) {
                 if (!update.isNullable || update.isRequired) throw InputException("Missing field: ${update.name}")
@@ -316,7 +358,7 @@ open class PatchOf<T : Any?> {
                     update as NestedPatchDelegate<T, Any?, PatchOf<Any?>>
 
                     val nestedUpdate = update.patch!!
-                    val nestedValue = update.prop.get(obj)
+                    val nestedValue = update.patchedProp.get(obj)
 
                     if (nestedValue != null) {
                         nestedUpdate.updated(nestedValue)
@@ -346,8 +388,9 @@ open class PatchOf<T : Any?> {
         val copy = patchedClass.memberFunctions.first { it.name == "copy" }
 
         val params: Map<KProperty1<*, *>, KParameter> = delegates.map { delegate ->
-            val param = copy.parameters.find { it.name == delegate.prop.name } ?: throw UnsupportedOperationException("One of the patches targets property which is not defined in primary constructor")
-            delegate.prop to param
+            val param = copy.parameters.find { it.name == delegate.patchedProp.name }
+                ?: throw UnsupportedOperationException("One of the patches targets property which is not defined in primary constructor")
+            delegate.patchedProp to param
         }.toMap()
 
         copy to params
@@ -363,19 +406,20 @@ open class PatchOf<T : Any?> {
     private fun getConstructor() = constructorCache.getOrPut(patchedClass) {
         val ctor = patchedClass.primaryConstructor ?: throw UnsupportedOperationException("${patchedClass.simpleName} does not have primary constructor")
 
-        val delegateProps = delegates.map { it.prop.name }
-        val paramProps = ctor.parameters.map { it.name }
+        val delegateProps = delegates.map { it.patchedProp.name }
+        val ctorParams = ctor.parameters.mapNotNull { it.name }
 
-        if (delegateProps != paramProps) throw UnsupportedOperationException("One of the patches targets property which is not defined in primary constructor")
+        val unmapped = delegateProps - ctorParams
+        if (unmapped.isNotEmpty()) throw UnsupportedOperationException("Patch class ${javaClass.simpleName} targets targets properties which are not defined in primary constructor: $unmapped")
 
         val params: Map<KProperty1<*, *>, KParameter> = ctor.parameters.mapNotNull { param ->
-            val delegate = delegates.find { it.prop.name == param.name }
+            val delegate = delegates.find { it.patchedProp.name == param.name }
             if (delegate == null) {
                 // missing but optional so we can skip it
                 if (param.isOptional) return@mapNotNull null
                 else throw UnsupportedOperationException("Patch class ${javaClass.simpleName} is missing a delegate for ${param.name} constructor parameter")
             }
-            delegate.prop to param
+            delegate.patchedProp to param
         }.toMap()
 
         ctor to params
@@ -383,24 +427,57 @@ open class PatchOf<T : Any?> {
 
     /**
      * Provides patch delegates.
+     *
+     * @param P Type of patched property
+     * @property patchedProp Definition of patched property
+     * @property patchedClazz Definition of patched class
      */
     inner class PatchDelegateProvider<P : Any?>(
-        private val prop: KProperty1<*, P>,
-        private val required: Boolean,
-        private val clazz: KClass<*>
+        private val patchedProp: KProperty1<*, P>,
+        private val patchedClazz: KClass<*>
     ) {
-        /** Provides a delegate for given object. */
+
+        /** Provides a delegate for given instance. */
         operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): PatchDelegate<T, P> {
+            if (::patchedClass.isInitialized && patchedClass != patchedClazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
+            patchedClass = patchedClazz
+
+            if (patchedProp !is KMutableProperty1<*, *>) canModifyInPlace = false
             if (property !is KMutableProperty1<*, *>) throw UnsupportedOperationException("Delegated property must be mutable: ${property.name}")
-            if (::patchedClass.isInitialized && patchedClass != clazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
 
-            if (prop !is KMutableProperty1<*, *>) allowsInPlace = false
             @Suppress("UNCHECKED_CAST") // Safe if not called from outside of this class
-            prop as KProperty1<T, P>
+            val patch = PatchDelegate(property.name, patchedProp as KProperty1<T, P>)
 
-            patchedClass = clazz
+            @Suppress("UNCHECKED_CAST") // Safe
+            delegates.add(patch as AbstractPatchDelegate<T, Any?>)
 
-            val patch = PatchDelegate(property.name, required, prop)
+            return patch
+        }
+    }
+
+    /**
+     * Provides required patch delegates.
+     *
+     * @param P Type of patched property
+     * @property patchedProp Definition of patched property
+     * @property patchedClazz Definition of patched class
+     */
+    inner class RequiredPatchDelegateProvider<P : Any?>(
+        private val patchedProp: KProperty1<*, P>,
+        private val patchedClazz: KClass<*>
+    ) {
+
+        /** Provides a delegate for given instance. */
+        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): RequiredPatchDelegate<T, P> {
+            if (::patchedClass.isInitialized && patchedClass != patchedClazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
+            patchedClass = patchedClazz
+
+            if (patchedProp !is KMutableProperty1<*, *>) canModifyInPlace = false
+            if (property !is KMutableProperty1<*, *>) throw UnsupportedOperationException("Delegated property must be mutable: ${property.name}")
+
+            @Suppress("UNCHECKED_CAST") // Safe if not called from outside of this class
+            val patch = RequiredPatchDelegate(property.name, patchedProp as KProperty1<T, P>)
+
             @Suppress("UNCHECKED_CAST") // Safe
             delegates.add(patch as AbstractPatchDelegate<T, Any?>)
 
@@ -410,24 +487,57 @@ open class PatchOf<T : Any?> {
 
     /**
      * Provides nested patch delegates.
+     *
+     * @param P Type of patched property
+     * @param U Type of Patch Class that is going to patch property
+     * @property patchedProp Definition of patched property
+     * @property patchedClazz Definition of patched class
      */
     inner class NestedPatchDelegateProvider<P : Any?, U : PatchOf<P>>(
-        private val prop: KProperty1<*, P>,
-        private val required: Boolean,
-        private val clazz: KClass<*>
+        private val patchedProp: KProperty1<*, P>,
+        private val patchedClazz: KClass<*>
     ) {
-        /** Provides a delegate for given object. */
+        /** Provides a delegate for given instance. */
         operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): NestedPatchDelegate<T, P, U> {
+            if (::patchedClass.isInitialized && patchedClass != patchedClazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
+            patchedClass = patchedClazz
+
+            if (patchedProp !is KMutableProperty1<*, *>) canModifyInPlace = false
             if (property !is KMutableProperty1<*, *>) throw UnsupportedOperationException("Delegated property must be mutable: ${property.name}")
-            if (::patchedClass.isInitialized && patchedClass != clazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
 
-            if (prop !is KMutableProperty1<*, *>) allowsInPlace = false
             @Suppress("UNCHECKED_CAST") // Safe if not called from outside of this class
-            prop as KProperty1<T, P>
+            val patch = NestedPatchDelegate<T, P, U>(property.name, patchedProp as KProperty1<T, P>)
 
-            patchedClass = clazz
+            @Suppress("UNCHECKED_CAST") // Safe
+            delegates.add(patch as AbstractPatchDelegate<T, Any?>)
 
-            val patch = NestedPatchDelegate<T, P, U>(property.name, required, prop)
+            return patch
+        }
+    }
+
+    /**
+     * Provides required nested patch delegates.
+     *
+     * @param P Type of patched property
+     * @param U Type of Patch Class that is going to patch property
+     * @property patchedProp Definition of patched property
+     * @property patchedClazz Definition of patched class
+     */
+    inner class RequiredNestedPatchDelegateProvider<P : Any?, U : PatchOf<P>>(
+        private val patchedProp: KProperty1<*, P>,
+        private val patchedClazz: KClass<*>
+    ) {
+        /** Provides a delegate for given instance. */
+        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): RequiredNestedPatchDelegate<T, P, U> {
+            if (::patchedClass.isInitialized && patchedClass != patchedClazz) throw IllegalArgumentException("All delegate targets must belong to ${patchedClass.simpleName} and '${property.name}' does not")
+            patchedClass = patchedClazz
+
+            if (patchedProp !is KMutableProperty1<*, *>) canModifyInPlace = false
+            if (property !is KMutableProperty1<*, *>) throw UnsupportedOperationException("Delegated property must be mutable: ${property.name}")
+
+            @Suppress("UNCHECKED_CAST") // Safe if not called from outside of this class
+            val patch = RequiredNestedPatchDelegate<T, P, U>(property.name, patchedProp as KProperty1<T, P>)
+
             @Suppress("UNCHECKED_CAST") // Safe
             delegates.add(patch as AbstractPatchDelegate<T, Any?>)
 

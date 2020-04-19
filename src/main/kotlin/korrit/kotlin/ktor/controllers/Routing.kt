@@ -24,6 +24,7 @@ val InputKey = AttributeKey<() -> Input<*>>("Input Provider")
  *
  * @param path route's path to match
  * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ * @param T Request handler
  */
 @ContextDsl
 inline fun <reified T : Input<*>> Route.GET(path: String, noinline handlerProvider: () -> T): Route {
@@ -39,6 +40,7 @@ inline fun <reified T : Input<*>> Route.GET(path: String, noinline handlerProvid
  *
  * @param path route's path to match
  * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ * @param T Request handler
  */
 @ContextDsl
 inline fun <reified T : Input<*>> Route.POST(path: String, noinline handlerProvider: () -> T): Route {
@@ -54,6 +56,7 @@ inline fun <reified T : Input<*>> Route.POST(path: String, noinline handlerProvi
  *
  * @param path route's path to match
  * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ * @param T Request handler
  */
 @ContextDsl
 inline fun <reified T : Input<*>> Route.PUT(path: String, noinline handlerProvider: () -> T): Route {
@@ -69,6 +72,7 @@ inline fun <reified T : Input<*>> Route.PUT(path: String, noinline handlerProvid
  *
  * @param path route's path to match
  * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ * @param T Request handler
  */
 @ContextDsl
 inline fun <reified T : Input<*>> Route.PATCH(path: String, noinline handlerProvider: () -> T): Route {
@@ -84,6 +88,7 @@ inline fun <reified T : Input<*>> Route.PATCH(path: String, noinline handlerProv
  *
  * @param path route's path to match
  * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ * @param T Request handler
  */
 @ContextDsl
 inline fun <reified T : Input<*>> Route.HEAD(path: String, noinline handlerProvider: () -> T): Route {
@@ -99,6 +104,7 @@ inline fun <reified T : Input<*>> Route.HEAD(path: String, noinline handlerProvi
  *
  * @param path route's path to match
  * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ * @param T Request handler
  */
 @ContextDsl
 inline fun <reified T : Input<*>> Route.DELETE(path: String, noinline handlerProvider: () -> T): Route {
@@ -114,6 +120,7 @@ inline fun <reified T : Input<*>> Route.DELETE(path: String, noinline handlerPro
  *
  * @param path route's path to match
  * @param handlerProvider lambda which returns request handler object, such design allows some freedom and API analysis
+ * @param T Request handler
  */
 @ContextDsl
 inline fun <reified T : Input<*>> Route.OPTIONS(path: String, noinline handlerProvider: () -> T): Route {

@@ -18,6 +18,8 @@ comments:
 complexity:
   ComplexMethod:
     ignoreSimpleWhenEntries: true
+  TooManyFunctions:
+    ignorePrivate: true
 
 naming:
   MemberNameEqualsClassName:

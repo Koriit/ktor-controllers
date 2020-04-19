@@ -12,6 +12,9 @@ import kotlin.reflect.KProperty1
  *
  * This class holds information on both **patch** property and **patched** property.
  * Do not confuse the both.
+ *
+ * @param T Patched class
+ * @param P Type of patched property
  */
 sealed class AbstractPatchDelegate<T : Any?, P : Any?> {
     /**
@@ -20,7 +23,7 @@ sealed class AbstractPatchDelegate<T : Any?, P : Any?> {
     abstract val name: String
 
     /**
-     * Whether *patch* property is required.
+     * Whether *patch* property is required even when using PATCH semantics.
      */
     abstract val isRequired: Boolean
 
@@ -37,23 +40,25 @@ sealed class AbstractPatchDelegate<T : Any?, P : Any?> {
     /**
      * Reference to *patched* property definition.
      */
-    internal abstract val prop: KProperty1<T, P>
+    internal abstract val patchedProp: KProperty1<T, P>
 
     /**
      * Shorthand reference to mutable *patched* property definition.
      * Throws if property is read-only.
      */
-    internal val mutableProp: KMutableProperty1<T, P> get() = prop as KMutableProperty1<T, P>
+    internal val mutableProp: KMutableProperty1<T, P> get() = patchedProp as KMutableProperty1<T, P>
 }
 
 /**
  * Delegate for flat values: scalars and objects used as-is.
+ *
+ * @param T Patched class
+ * @param P Type of patched property
  */
 @KtorExperimentalAPI
-class PatchDelegate<T : Any?, P : Any?>(
+open class PatchDelegate<T : Any?, P : Any?> internal constructor(
     override val name: String,
-    override val isRequired: Boolean,
-    override val prop: KProperty1<T, P>
+    override val patchedProp: KProperty1<T, P>
 ) : ReadWriteProperty<Any?, P>, AbstractPatchDelegate<T, P>() {
 
     /**
@@ -62,10 +67,12 @@ class PatchDelegate<T : Any?, P : Any?>(
     internal var value: P? = null
         private set
 
-    override var isSet: Boolean = false
+    override val isRequired = false
+
+    final override var isSet: Boolean = false
         private set
 
-    override val isNullable = prop.returnType.isMarkedNullable
+    override val isNullable = patchedProp.returnType.isMarkedNullable
 
     override operator fun getValue(thisRef: Any?, property: KProperty<*>): P {
         // when directly accessing not set field we must throw an exception
@@ -82,13 +89,32 @@ class PatchDelegate<T : Any?, P : Any?>(
 }
 
 /**
- * Delegate for nested patches.
+ * Delegate for flat mandatory values: scalars and objects used as-is.
+ * Different implementation class to differ required delegates just by type.
+ *
+ * @param T Patched class
+ * @param P Type of patched property
  */
 @KtorExperimentalAPI
-class NestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>>(
+class RequiredPatchDelegate<T : Any?, P : Any?> internal constructor(
+    name: String,
+    prop: KProperty1<T, P>
+) : PatchDelegate<T, P>(name, prop) {
+
+    override val isRequired = true
+}
+
+/**
+ * Delegate for nested patches.
+ *
+ * @param T Patched class
+ * @param P Type of patched property
+ * @param N Type of Patch Class that is going to patch property
+ */
+@KtorExperimentalAPI
+open class NestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>> internal constructor(
     override val name: String,
-    override val isRequired: Boolean,
-    override val prop: KProperty1<T, P>
+    override val patchedProp: KProperty1<T, P>
 ) : ReadWriteProperty<Any?, N>, AbstractPatchDelegate<T, P>() {
 
     /**
@@ -97,10 +123,12 @@ class NestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>>(
     internal var patch: N? = null
         private set
 
-    override var isSet: Boolean = false
+    override val isRequired = false
+
+    final override var isSet: Boolean = false
         private set
 
-    override val isNullable = prop.returnType.isMarkedNullable
+    override val isNullable = patchedProp.returnType.isMarkedNullable
 
     override operator fun getValue(thisRef: Any?, property: KProperty<*>): N {
         // when directly accessing not set field we must throw an exception
@@ -114,4 +142,21 @@ class NestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>>(
         this.patch = value
         this.isSet = true
     }
+}
+
+/**
+ * Delegate for mandatory nested patches.
+ * Different implementation class to differ required delegates just by type.
+ *
+ * @param T Patched class
+ * @param P Type of patched property
+ * @param N Type of Patch Class that is going to patch property
+ */
+@KtorExperimentalAPI
+class RequiredNestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>> internal constructor(
+    name: String,
+    prop: KProperty1<T, P>
+) : NestedPatchDelegate<T, P, N>(name, prop) {
+
+    override val isRequired = true
 }

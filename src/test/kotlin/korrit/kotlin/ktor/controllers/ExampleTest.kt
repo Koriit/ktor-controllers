@@ -1,12 +1,12 @@
 package korrit.kotlin.ktor.controllers
 
-import io.ktor.features.BadRequestException
 import io.ktor.http.ContentType.Text
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.response.header
 import io.ktor.response.respondText
+import korrit.kotlin.ktor.controllers.exceptions.InputException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -21,7 +21,7 @@ internal class ExampleTest {
 
                 override suspend fun Ctx.respond() {
                     if (someParam < 0) {
-                        throw BadRequestException("Param cannot be negative")
+                        throw InputException("Param cannot be negative")
                     }
 
                     call.response.header("Elite-Header", someParam)

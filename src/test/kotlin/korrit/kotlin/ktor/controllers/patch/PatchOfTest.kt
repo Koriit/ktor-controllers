@@ -9,7 +9,6 @@ import io.ktor.http.HttpHeaders.ContentType
 import io.ktor.http.HttpMethod.Companion.Patch
 import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.http.HttpStatusCode.Companion.NoContent
-import io.ktor.http.content.OutgoingContent.NoContent
 import io.ktor.request.httpMethod
 import io.ktor.response.respond
 import io.ktor.server.testing.setBody
@@ -478,15 +477,30 @@ internal class PatchOfTest {
 
     @Test
     fun `Should throw when missing required fields`() {
+        class MyNestedEntity {
+            var field: String = "value"
+        }
+
         data class MyEntity(
-            var field: String? = null // optional
+            var field: String? = null, // optional in patch
+            var nested: MyNestedEntity? = null // optional in patch
         )
+
+        class NestedPatch : PatchOf<MyNestedEntity?>() {
+            var field by patchOf(MyNestedEntity::field)
+        }
 
         val requiredPatch = object : PatchOf<MyEntity>() {
             var field by patchOf(MyEntity::field, required = true)
+            var nested by patchOf(MyEntity::nested, by = NestedPatch::class)
+        }
+        val requiredNestedPatch = object : PatchOf<MyEntity>() {
+            var field by patchOf(MyEntity::field)
+            var nested by patchOf(MyEntity::nested, by = NestedPatch::class, required = true)
         }
         val optionalPatch = object : PatchOf<MyEntity>() {
-            var field by patchOf(MyEntity::field, required = false)
+            var field by patchOf(MyEntity::field)
+            var nested by patchOf(MyEntity::nested, by = NestedPatch::class)
         }
 
         assertDoesNotThrow {
@@ -502,6 +516,12 @@ internal class PatchOfTest {
         assertThrows<InputException> { requiredPatch.patched(MyEntity()) }
         assertThrows<InputException> { requiredPatch.update(MyEntity()) }
         assertThrows<InputException> { requiredPatch.updated(MyEntity()) }
+
+        assertThrows<InputException> { requiredNestedPatch.instance() }
+        assertThrows<InputException> { requiredNestedPatch.patch(MyEntity()) }
+        assertThrows<InputException> { requiredNestedPatch.patched(MyEntity()) }
+        assertThrows<InputException> { requiredNestedPatch.update(MyEntity()) }
+        assertThrows<InputException> { requiredNestedPatch.updated(MyEntity()) }
     }
 
     @Test
