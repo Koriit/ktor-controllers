@@ -18,7 +18,9 @@ class UUIDCallId {
     /** Configuration of UUIDCallId feature. */
     class Config {
         /** Configures which header should be checked for Call Id value. */
-        var header: String = HttpHeaders.XCorrelationId
+        var primaryHeader: String = HttpHeaders.XCorrelationId
+
+        var secondaryHeader: String = HttpHeaders.XRequestId
     }
 
     /**
@@ -33,7 +35,8 @@ class UUIDCallId {
             config.configure()
 
             return CallId.install(pipeline) {
-                header(config.header)
+                header(config.primaryHeader)
+                header(config.secondaryHeader)
                 generate { UUID.randomUUID().toString() }
                 verify { it.isNotBlank() }
             }
