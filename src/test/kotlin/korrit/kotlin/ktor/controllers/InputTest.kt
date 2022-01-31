@@ -7,12 +7,12 @@ import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.HttpStatusCode.Companion.UnsupportedMediaType
 import io.ktor.response.respond
 import io.ktor.server.testing.setBody
-import java.io.File
-import java.time.LocalDate
-import kotlin.test.fail
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
+import java.io.File
+import java.time.LocalDate
 
 internal class InputTest {
 
@@ -40,12 +40,14 @@ internal class InputTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Post
-            addHeader(ContentType, Application.Json.toString())
-            setBody("{\n  \"stringParam\": \"1337\",\n  \"intParam\": 1337\n}")
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Post
+                addHeader(ContentType, Application.Json.toString())
+                setBody("{\n  \"stringParam\": \"1337\",\n  \"intParam\": 1337\n}")
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -70,12 +72,14 @@ internal class InputTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Post
-            addHeader(ContentType, Application.Json.toString())
-            setBody("\"1993-12-11\"") // note that application/json is deserialized by jackson with JavaTimeModule in the test server
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Post
+                addHeader(ContentType, Application.Json.toString())
+                setBody("\"1993-12-11\"") // note that application/json is deserialized by jackson with JavaTimeModule in the test server
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -103,12 +107,14 @@ internal class InputTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Post
-            addHeader(ContentType, Application.OctetStream.toString())
-            setBody(file.readBytes())
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Post
+                addHeader(ContentType, Application.OctetStream.toString())
+                setBody(file.readBytes())
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -133,11 +139,13 @@ internal class InputTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Post
-            setBody(file.readBytes())
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Post
+                setBody(file.readBytes())
+            }
+        ) {
             assertEquals(UnsupportedMediaType, response.status())
         }
 

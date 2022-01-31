@@ -4,16 +4,16 @@ import io.ktor.features.callId
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.response.respond
-import java.util.UUID
 import korrit.kotlin.ktor.controllers.Ctx
 import korrit.kotlin.ktor.controllers.EmptyBodyInput
 import korrit.kotlin.ktor.controllers.GET
 import korrit.kotlin.ktor.controllers.header
 import korrit.kotlin.ktor.controllers.testServer
 import korrit.kotlin.ktor.features.UUIDCallId
-import kotlin.test.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
+import java.util.UUID
 
 internal class UUIDCallIdTest {
 
@@ -40,11 +40,13 @@ internal class UUIDCallIdTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-            addHeader(callIdHeader, expectedCallId)
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+                addHeader(callIdHeader, expectedCallId)
+            }
+        ) {
             assertEquals(OK, response.status())
             assertEquals(expectedCallId, response.headers[callIdHeader])
         }
@@ -73,10 +75,12 @@ internal class UUIDCallIdTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+            }
+        ) {
             assertEquals(OK, response.status())
             assertEquals(generatedCallId, response.headers[callIdHeader]!!)
         }

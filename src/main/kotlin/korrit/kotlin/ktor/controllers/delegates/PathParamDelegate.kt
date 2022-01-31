@@ -1,10 +1,9 @@
 package korrit.kotlin.ktor.controllers.delegates
 
 import io.ktor.features.conversionService
-import io.ktor.util.KtorExperimentalAPI
-import java.lang.reflect.Type
 import korrit.kotlin.ktor.controllers.Input
 import korrit.kotlin.ktor.controllers.exceptions.InputException
+import java.lang.reflect.Type
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -16,7 +15,6 @@ import kotlin.reflect.KProperty
  * @property type return type of the parameter, must hold _T_ class
  * @property receiver internal reference to the delegate receiver
  */
-@KtorExperimentalAPI
 class PathParamDelegate<T : Any?>(
     val name: String,
     val type: Type,

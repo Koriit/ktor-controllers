@@ -1,6 +1,6 @@
 package korrit.kotlin.ktor.controllers
 
-import koriit.kotlin.slf4j.logger
+import com.koriit.kotlin.slf4j.logger
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

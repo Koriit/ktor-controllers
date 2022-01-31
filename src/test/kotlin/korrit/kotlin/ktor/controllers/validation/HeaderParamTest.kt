@@ -4,16 +4,16 @@ import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.response.respond
-import java.time.LocalDate
-import java.time.LocalDate.of
 import korrit.kotlin.ktor.controllers.Ctx
 import korrit.kotlin.ktor.controllers.EmptyBodyInput
 import korrit.kotlin.ktor.controllers.GET
 import korrit.kotlin.ktor.controllers.header
 import korrit.kotlin.ktor.controllers.testServer
-import kotlin.test.fail
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
+import java.time.LocalDate
+import java.time.LocalDate.of
 
 internal class HeaderParamTest {
 
@@ -43,15 +43,17 @@ internal class HeaderParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-            addHeader("My-Date-Header", "1993-12-11")
-            addHeader("My-String-Header", "1337")
-            addHeader("My-Int-Header", "1337")
-            addHeader("My-Double-Header", "13.37")
-            addHeader("My-Bool-Header", "true")
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+                addHeader("My-Date-Header", "1993-12-11")
+                addHeader("My-String-Header", "1337")
+                addHeader("My-Int-Header", "1337")
+                addHeader("My-Double-Header", "13.37")
+                addHeader("My-Bool-Header", "true")
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -86,10 +88,12 @@ internal class HeaderParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -113,10 +117,12 @@ internal class HeaderParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+            }
+        ) {
             assertEquals(BadRequest, response.status())
         }
 
@@ -140,11 +146,13 @@ internal class HeaderParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-            addHeader("My-Int-Header", "qwerty")
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+                addHeader("My-Int-Header", "qwerty")
+            }
+        ) {
             assertEquals(BadRequest, response.status())
         }
 

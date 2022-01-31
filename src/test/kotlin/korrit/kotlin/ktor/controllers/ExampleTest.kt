@@ -42,19 +42,23 @@ internal class ExampleTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/date?someParam=1337"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/date?someParam=1337"
+                method = Get
+            }
+        ) {
             assertEquals(OK, response.status())
             assertEquals("1337", response.headers["Elite-Header"])
             assertEquals("1993-12-11", response.content)
         }
 
-        with(server.handleRequest {
-            uri = "/date?someParam=-1"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/date?someParam=-1"
+                method = Get
+            }
+        ) {
             assertEquals(BadRequest, response.status())
         }
 

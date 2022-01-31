@@ -3,6 +3,7 @@ package korrit.kotlin.ktor.controllers.patch
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.koriit.kotlin.slf4j.logger
 import io.ktor.client.utils.EmptyContent
 import io.ktor.http.ContentType.Application
 import io.ktor.http.HttpHeaders.ContentType
@@ -12,7 +13,6 @@ import io.ktor.http.HttpStatusCode.Companion.NoContent
 import io.ktor.request.httpMethod
 import io.ktor.response.respond
 import io.ktor.server.testing.setBody
-import koriit.kotlin.slf4j.logger
 import korrit.kotlin.ktor.controllers.Ctx
 import korrit.kotlin.ktor.controllers.Input
 import korrit.kotlin.ktor.controllers.PATCH
@@ -70,6 +70,7 @@ internal class PatchOfTest {
     private val log = logger {}
     private val jackson = ObjectMapper().registerKotlinModule()
 
+    @Suppress("LongMethod")
     @Test
     fun `Test basic update cases`() {
         data class Case(
@@ -156,6 +157,7 @@ internal class PatchOfTest {
         }
     }
 
+    @Suppress("LongMethod")
     @Test
     fun `Test basic patch cases`() {
         data class Case(
@@ -561,22 +563,26 @@ internal class PatchOfTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/put"
-            method = Put
-            addHeader(ContentType, Application.Json.toString())
-            setBody("{\n  \"int\": 0,\n  \"string\": \"\",\n  \"float\": 0.0,\n  \"nullable\": null,\n  \"nested\": {\n    \"bf\": true\n  }\n}")
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/put"
+                method = Put
+                addHeader(ContentType, Application.Json.toString())
+                setBody("{\n  \"int\": 0,\n  \"string\": \"\",\n  \"float\": 0.0,\n  \"nullable\": null,\n  \"nested\": {\n    \"bf\": true\n  }\n}")
+            }
+        ) {
             assertEquals(NoContent, response.status())
             assertNull(response.content)
         }
 
-        with(server.handleRequest {
-            uri = "/patch"
-            method = Patch
-            addHeader(ContentType, Application.Json.toString())
-            setBody("{\n  \"int\": 0,\n  \"string\": \"\",\n  \"float\": 0.0,\n  \"nullable\": null,\n  \"nested\": {\n    \"bf\": true\n  }\n}")
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/patch"
+                method = Patch
+                addHeader(ContentType, Application.Json.toString())
+                setBody("{\n  \"int\": 0,\n  \"string\": \"\",\n  \"float\": 0.0,\n  \"nullable\": null,\n  \"nested\": {\n    \"bf\": true\n  }\n}")
+            }
+        ) {
             assertEquals(NoContent, response.status())
             assertNull(response.content)
         }

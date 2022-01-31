@@ -1,8 +1,7 @@
 package korrit.kotlin.ktor.controllers.patch
 
-import io.ktor.util.KtorExperimentalAPI
-import java.util.concurrent.ConcurrentHashMap
 import korrit.kotlin.ktor.controllers.exceptions.InputException
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KMutableProperty1
@@ -28,7 +27,6 @@ import kotlin.reflect.full.primaryConstructor
  *
  * @param T Target patched class
  */
-@KtorExperimentalAPI
 open class PatchOf<T : Any?> {
 
     companion object {

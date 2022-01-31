@@ -1,6 +1,5 @@
 package korrit.kotlin.ktor.controllers.patch
 
-import io.ktor.util.KtorExperimentalAPI
 import korrit.kotlin.ktor.controllers.exceptions.InputException
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KMutableProperty1
@@ -55,7 +54,6 @@ sealed class AbstractPatchDelegate<T : Any?, P : Any?> {
  * @param T Patched class
  * @param P Type of patched property
  */
-@KtorExperimentalAPI
 open class PatchDelegate<T : Any?, P : Any?> internal constructor(
     override val name: String,
     override val patchedProp: KProperty1<T, P>
@@ -95,7 +93,6 @@ open class PatchDelegate<T : Any?, P : Any?> internal constructor(
  * @param T Patched class
  * @param P Type of patched property
  */
-@KtorExperimentalAPI
 class RequiredPatchDelegate<T : Any?, P : Any?> internal constructor(
     name: String,
     prop: KProperty1<T, P>
@@ -111,7 +108,6 @@ class RequiredPatchDelegate<T : Any?, P : Any?> internal constructor(
  * @param P Type of patched property
  * @param N Type of Patch Class that is going to patch property
  */
-@KtorExperimentalAPI
 open class NestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>> internal constructor(
     override val name: String,
     override val patchedProp: KProperty1<T, P>
@@ -152,7 +148,6 @@ open class NestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>> internal cons
  * @param P Type of patched property
  * @param N Type of Patch Class that is going to patch property
  */
-@KtorExperimentalAPI
 class RequiredNestedPatchDelegate<T : Any?, P : Any?, N : PatchOf<P>> internal constructor(
     name: String,
     prop: KProperty1<T, P>

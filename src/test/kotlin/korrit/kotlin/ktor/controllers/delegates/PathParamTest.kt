@@ -4,16 +4,16 @@ import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.response.respond
-import java.time.LocalDate
-import java.time.LocalDate.of
 import korrit.kotlin.ktor.controllers.Ctx
 import korrit.kotlin.ktor.controllers.EmptyBodyInput
 import korrit.kotlin.ktor.controllers.GET
 import korrit.kotlin.ktor.controllers.path
 import korrit.kotlin.ktor.controllers.testServer
-import kotlin.test.fail
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
+import java.time.LocalDate
+import java.time.LocalDate.of
 
 internal class PathParamTest {
 
@@ -43,10 +43,12 @@ internal class PathParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test/1993-12-11/1337/1337/13.37/true"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test/1993-12-11/1337/1337/13.37/true"
+                method = Get
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -81,10 +83,12 @@ internal class PathParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -111,10 +115,12 @@ internal class PathParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test/1337"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test/1337"
+                method = Get
+            }
+        ) {
             assertEquals(OK, response.status())
         }
 
@@ -138,10 +144,12 @@ internal class PathParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test"
+                method = Get
+            }
+        ) {
             assertEquals(BadRequest, response.status())
         }
 
@@ -165,10 +173,12 @@ internal class PathParamTest {
 
         server.start()
 
-        with(server.handleRequest {
-            uri = "/test/qwerty"
-            method = Get
-        }) {
+        with(
+            server.handleRequest {
+                uri = "/test/qwerty"
+                method = Get
+            }
+        ) {
             assertEquals(BadRequest, response.status())
         }
 
