@@ -1,11 +1,11 @@
 = Ktor Controllers
 :toc:
 
-image:https://www.travis-ci.org/Koriit/ktor-controllers.svg?branch=master["Build Status", link="https://www.travis-ci.org/Koriit/ktor-controllers"]
+image:https://github.com/Koriit/ktor-controllers/actions/workflows/build.yaml/badge.svg[Build, link="https://github.com/Koriit/ktor-controllers/actions/workflows/build.yaml"]
 image:https://www.codefactor.io/repository/github/koriit/ktor-controllers/badge[CodeFactor,link=https://www.codefactor.io/repository/github/koriit/ktor-controllers]
 image:https://img.shields.io/badge/code%20style-%E2%9D%A4-FF4081.svg[ktlint,link=https://ktlint.github.io/]
 
-image:https://api.bintray.com/packages/koriit/kotlin/ktor-controllers/images/download.svg[Download, link=https://bintray.com/koriit/kotlin/ktor-controllers/_latestVersion]
+image:https://img.shields.io/maven-central/v/com.koriit.kotlin/ktor-controllers.svg?label=Maven%20Central[Maven Central, link="https://search.maven.org/search?q=g:%22com.koriit.kotlin%22%20AND%20a:%22ktor-controllers%22"]
 image:https://img.shields.io/github/license/koriit/ktor-controllers[GitHub]
 
 Helpers to create powerful Ktor controllers.
